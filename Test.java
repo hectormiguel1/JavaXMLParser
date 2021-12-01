@@ -1,8 +1,23 @@
 public class Test {
     public static void main(String[] args) {
-        var xml = "<root year=\"220\">\nTest\n<child>\nTest2\n<grandchild>\nTest3\n</grandchild>\n</child>\n</root>";
+        var xml = """
+        <?xml version="1.0" encoding="UTF-8"?>
+        <note>
+        <to>
+        Tove
+        </to>
+        <from>
+        Jani
+        </from>
+        <heading>
+        Reminder
+        </heading>
+        <body>
+        Don't forget me this weekend!
+        </body>
+        </note>""";
         var parser = new XMLParser(xml);
         var root = parser.getRoot();
-        System.out.println(root.getValue());
+        System.out.println(root);
     }
 }

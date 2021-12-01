@@ -124,4 +124,13 @@ class XMLNode {
         sb.append(">");
         return sb.toString();
     }
+
+    public XMLNode getChild(String string) {
+        for (XMLNode child : this.children) {
+            if (child.getName().equals(string)) {
+                return child;
+            }
+        }
+        return null;
+    }
 }

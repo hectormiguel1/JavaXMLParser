@@ -1,17 +1,14 @@
-import java.nio.ByteBuffer;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Stack;
 
 public class XMLParser {
     private XMLNode root;
 
     public XMLParser(String xml) {
-        parse_with_stack(xml, new Stack<String>());
+        parse_with_stack(xml);
     }
 
-    public XMLNode getRoot() {
+    public XMLNode getXMLNode() {
         return root;
     }
 
@@ -44,52 +41,75 @@ public class XMLParser {
         }
     }
 
-    private void parse_with_stack(String xml, Stack<String> stack) {
-        var xmlBytes  = xml.getBytes();
+    private void parse_with_stack(String xml) {
+        Stack<String> stack = new Stack<>();
+        String trimmed = xml.trim();
+        var chars = trimmed.toCharArray();
+        var currentTag = "";
+        var currentValue = "";
         var currentNode = root;
-        for (int i = 0; i < xmlBytes.length;) {
-            String tag = "";
-            HashMap<String, String> attributes = new HashMap<>();
-            String value = "";
-            if (xmlBytes[i] == '<') {
-               StringBuffer sb = new StringBuffer();
-                while( ((char)xmlBytes[i]) != ((char)'>') || ((char)xmlBytes[i]) != ((char)' ') ) {
-                    sb.append(((char) xmlBytes[i]));
-                    i++;
-                }
-                tag = sb.toString();
-                if (xmlBytes[i] == '>') {
-                    if(currentNode == null) {
-                        root = new XMLNode(tag, value, null);
+        var start = 0;
+        while (start < chars.length) {
+            if (chars[start] == '<') {
+                if (chars[start + 1] == '/') {
+                    var end = start + 2;
+                    while (end < chars.length && chars[end] != '>') {
+                        end++;
+                    }
+                    var tag = new String(chars, start + 2, end - start - 2);
+                    if (stack.isEmpty() || !stack.peek().equals(tag)) {
+                        throw new RuntimeException("Invalid XML");
+                    }
+                    stack.pop();
+                    if (currentNode == null) {
+                        root = new XMLNode(currentTag, currentValue, null);
                         currentNode = root;
                     } else {
-                        var childNode = new XMLNode(tag, value, currentNode);
+                        if (currentTag.equals(currentNode.getName())) {
+                            currentNode.setValue(currentValue);
+                        } else {
+                            currentNode = currentNode.getParent();
+                            if (!currentTag.isEmpty()) {
+                                var childNode = new XMLNode(currentTag, currentValue, currentNode);
+                                currentNode.addChild(childNode);
+                                currentNode = childNode;
+                            }
+                        }
+                    }
+                    currentTag = "";
+                    currentValue = "";
+                    start = end + 1;
+                } else {
+                    var end = start + 1;
+                    while (end < chars.length && chars[end] != '>') {
+                        end++;
+                    }
+                    var tag = new String(chars, start + 1, end - start - 1);
+                    if (tag.contains("?xml") || tag.contains("!DOCTYPE") || tag.contains("!--")) {
+                        start = end + 1;
+                        continue;
+                    }
+                    if (currentNode == null) {
+                        root = new XMLNode(tag, "", null);
+                        currentNode = root;
+                    } else {
+                        var childNode = new XMLNode(tag, "", currentNode);
                         currentNode.addChild(childNode);
                         currentNode = childNode;
                     }
                     stack.push(tag);
-                } else if (xmlBytes[i] == ' ') {
-                    StringBuffer sb2 = new StringBuffer();
-                    while(xmlBytes[i] != '>') {
-                        sb2.append(xmlBytes[i]);
-                        i++;
-                    }
-                    var attribStr = sb2.toString();
-                    var attribs = attribStr.split(" ");
-                    attributes = new HashMap<String, String>();
-                    for (var attrib : attribs) {
-                        attributes.put(attrib.split("=")[0], attrib.split("=")[1]);
-                    }
-                    
+                    currentTag = tag;
+                    currentValue = "";
+                    start = end + 1;
                 }
             } else {
-                StringBuffer sb = new StringBuffer();
-                while(xmlBytes[i] != '<') {
-                    sb.append(xmlBytes[i]);
-                    i++;
+                var end = start + 1;
+                while (end < chars.length && chars[end] != '<') {
+                    end++;
                 }
-                value = sb.toString();
-                currentNode.setValue(value);
+                var value = new String(chars, start, end - start);
+                currentValue += value;
+                start = end;
             }
         }
     }

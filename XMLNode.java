@@ -97,31 +97,45 @@ class XMLNode {
         this.removeAllChildren();
     }
 
+    public void removeEmpty() {
+        for (XMLNode child : this.children) {
+            child.removeEmpty();
+        }
+        children.removeIf(XMLNode::isEmpty);
+    }
+
+    public boolean isEmpty() {
+        return this.name.isEmpty() && this.value.isEmpty() && this.children.size() == 0 && this.attributes.size() == 0;
+    }
+
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append("<");
         sb.append(this.name);
         if (this.attributes.size() > 0) {
-            for (var entrySet : this.attributes.entrySet()) {
+            for (String key : this.attributes.keySet()) {
                 sb.append(" ");
-                sb.append(entrySet.getKey());
+                sb.append(key);
                 sb.append("=\"");
-                sb.append(entrySet.getValue());
+                sb.append(this.attributes.get(key));
+                sb.append("\"");
             }
         }
-        if (this.value != null) {
+        if (this.value == null) {
+            sb.append("/>");
+        } else {
             sb.append(">");
             sb.append(this.value);
-        }
-        if (this.children.size() > 0) {
-            for (XMLNode child : this.children) {
-                sb.append(child.toString());
+            if (this.children.size() > 0) {
+                for (XMLNode child : this.children) {
+                    sb.append(child.toString());
+                }
             }
             sb.append("</");
             sb.append(this.name);
+            sb.append(">");
         }
-        sb.append(">");
         return sb.toString();
     }
 

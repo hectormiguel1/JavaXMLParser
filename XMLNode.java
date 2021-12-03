@@ -139,10 +139,15 @@ class XMLNode {
         return sb.toString();
     }
 
-    public XMLNode getChild(String string) {
-        for (XMLNode child : this.children) {
-            if (child.getName().equals(string)) {
-                return child;
+    public XMLNode getNode(String string) {
+        if (this.name.equals(string)) {
+            return this;
+        } else {
+            for (XMLNode child : this.children) {
+                XMLNode node = child.getNode(string);
+                if (node != null) {
+                    return node;
+                }
             }
         }
         return null;

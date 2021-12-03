@@ -53,7 +53,7 @@ public class XMLParser {
                 //Push tag to stack
                 tagStack.push(currentTag);
                 // Read the value of the tag if it has any.
-                String value = readStringTillDelimiter(xml.substring(i, xml.length()), '<');
+                String value = readStringTillDelimiter(xml.substring(i, xml.length()), '<').trim();
                 // Advancing the index in xml bytes for the number of characters read
                 i = i + value.length();
                 // Create a new XMLNode with the current tag and value
@@ -88,6 +88,9 @@ public class XMLParser {
                     currentNode = childNode;
                 }
 
+            } else {
+                //No tags found, prob in a space, advance index
+                i++;
             }
         }
         return root;

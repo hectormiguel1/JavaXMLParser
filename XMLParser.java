@@ -89,8 +89,9 @@ public class XMLParser {
                 }
 
             } else {
-                //No tags found, prob in a space, advance index
-                i++;
+                var spaces = readStringTillDelimiter(xml.substring(i, xml.length()), '<');//No tags found, prob in a space, advance index
+                var space_lenght = spaces.length() ;
+                i = i + space_lenght;
             }
         }
         return root;

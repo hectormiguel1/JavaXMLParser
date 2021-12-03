@@ -117,9 +117,8 @@ class XMLNode {
             for (String key : this.attributes.keySet()) {
                 sb.append(" ");
                 sb.append(key);
-                sb.append("=\"");
+                sb.append("=");
                 sb.append(this.attributes.get(key));
-                sb.append("\"");
             }
         }
         if (this.value == null) {

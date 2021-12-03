@@ -45,15 +45,17 @@ public class XMLParser {
     }
 
     private void parse_with_stack(String xml) {
-        xml = xml.replaceAll("\n", "");
-        xml = xml.replaceAll("\r", "");
-        xml = xml.replaceAll("\t", "");
-        xml = xml.trim();
+        //Cleanup incomring xml string
+        xml = xml.replaceAll("\n", "").replaceAll("\r", "").replaceAll("\t", "").trim();
+        //Create stack to keep track of xml tags
         Stack<String> tagStack = new Stack<>();
+        //get all the characters in the xml string
         char[] xmlBytes = xml.toCharArray();
         String currentTag = "";
         XMLNode currentNode = root;
+        //iterate through the characters
         for (int i = 0; i < xmlBytes.length;) {
+            //Check of tags
             if (xmlBytes[i] == '<') {
                 // Check if is closing tag
                 if (xmlBytes[i + 1] == '/') {
@@ -78,7 +80,7 @@ public class XMLParser {
                 //Remove discovered attributes from the current tag
                 if(attributes.size() > 0) {
                     for (var set : attributes.entrySet()) {
-                        currentTag = currentTag.replace(set.getKey() + "=" + set.getValue(), "");
+                        currentTag = currentTag.replace(set.getKey() + "=" + set.getValue(), "").trim();
                     }
                 }
                 // Read the value of the tag if it has any.

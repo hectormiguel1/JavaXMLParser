@@ -5,62 +5,33 @@ import java.util.List;
 import java.util.Stack;
 
 public class XMLParser {
-    private XMLNode root;
 
-    public XMLParser(String xml) {
-        parse_with_stack(xml);
-    }
-
-    public XMLNode getRoot() {
-        return root;
-    }
-
-    private void parse(String xml) {
-        String[] lines = xml.split("\n");
-        String currentTag = null;
-        XMLNode currentNode = root;
-        for (String line : lines) {
-            if (line.contains("<?xml") || line.contains("<!DOCTYPE") || line.contains("<!--") || line.isEmpty()) {
-                continue;
-            }
-            if (line.startsWith("<")) {
-                if (line.startsWith("</")) {
-                    currentNode = currentNode.getParent();
-                } else {
-                    currentTag = line.substring(1, line.indexOf('>'));
-                    if (currentNode == null) {
-                        var childNode = new XMLNode(currentTag, "", null);
-                        root = childNode;
-                        currentNode = root;
-                    } else {
-                        var childNode = new XMLNode(currentTag, "", currentNode);
-                        currentNode.addChild(childNode);
-                        currentNode = childNode;
-                    }
-                }
-            } else {
-                currentNode.setValue(line);
-            }
-        }
-    }
-
-    private void parse_with_stack(String xml) {
-        //Cleanup incomring xml string
+    public XMLNode parse(String xml) throws InvalidXMLException {
+        // Cleanup incomring xml string
         xml = xml.replaceAll("\n", "").replaceAll("\r", "").replaceAll("\t", "").trim();
-        //Create stack to keep track of xml tags
+        // Create stack to keep track of xml tags
         Stack<String> tagStack = new Stack<>();
-        //get all the characters in the xml string
+        XMLNode root = null;
+        // get all the characters in the xml string
         char[] xmlBytes = xml.toCharArray();
         String currentTag = "";
         XMLNode currentNode = root;
-        //iterate through the characters
+        // iterate through the characters
         for (int i = 0; i < xmlBytes.length;) {
-            //Check of tags
+            // Check of tags
             if (xmlBytes[i] == '<') {
                 // Check if is closing tag
                 if (xmlBytes[i + 1] == '/') {
-                    currentTag = readStringTillDelimiter(xml.substring(++i, xml.length()), '>');
-                    i = i + currentTag.length() + 1;
+                    //Read tag 
+                    var closingTag = readStringTillDelimiter(xml.substring(++i, xml.length()), '>');
+                    //Increment i by number of chars red
+                    i = i + closingTag.length() + 1;
+                    //Remove '/' from tag
+                    closingTag = closingTag.replaceAll("/", "");
+                    // Check if tag is in stack
+                    if (!closingTag.equals(tagStack.peek())) {
+                        throw new InvalidXMLException("Invalid XML: Closing tag does not match opening tag, closing tag: " + closingTag + " open tag: " + tagStack.peek());
+                    }
                     tagStack.pop();
                     currentNode = currentNode.getParent();
                     continue;
@@ -74,15 +45,16 @@ public class XMLParser {
                         || currentTag.isEmpty()) {
                     continue;
                 }
-                tagStack.push(currentTag);
                 // Extract attributes from the current tag
                 HashMap<String, String> attributes = extractAttributes(currentTag);
-                //Remove discovered attributes from the current tag
-                if(attributes.size() > 0) {
+                // Remove discovered attributes from the current tag
+                if (attributes.size() > 0) {
                     for (var set : attributes.entrySet()) {
                         currentTag = currentTag.replace(set.getKey() + "=" + set.getValue(), "").trim();
                     }
                 }
+                //Push tag to stack
+                tagStack.push(currentTag);
                 // Read the value of the tag if it has any.
                 String value = readStringTillDelimiter(xml.substring(i, xml.length()), '<');
                 // Advancing the index in xml bytes for the number of characters read
@@ -91,8 +63,18 @@ public class XMLParser {
                 var childNode = new XMLNode(currentTag, value, currentNode, attributes);
                 // If the current tag is a closing tag
                 if (xmlBytes[i + 1] == '/') {
+                    // Read the closing tag
                     var closingTag = readStringTillDelimiter(xml.substring(++i, xml.length()), '>');
+                    // Advance the current index in xml bytes for the number of characters read
                     i = i + closingTag.length() + 1;
+
+                    // Remove '/' from the current tag
+                    closingTag = closingTag.replaceAll("/", "");
+
+                    // Check if the closing tag is the top of the stack
+                    if (!closingTag.equals(tagStack.peek())) {
+                        throw new InvalidXMLException("Invalid XML: Closing tag does not match opening tag, closing tag: " + closingTag + " open tag: " + tagStack.peek());
+                    }
                     // Pop the current tag from the stack
                     tagStack.pop();
                     // Add the new node the current node's children
@@ -111,6 +93,7 @@ public class XMLParser {
 
             }
         }
+        return root;
     }
 
     // Function extracts the xml attibutes from the current tag by splitting the
@@ -131,7 +114,7 @@ public class XMLParser {
     // Function will read characters from a char array till a specified charcter is
     // found,
     // The resulting strill will be returned.
-    String readStringTillDelimiter(String str, char delimiter) {
+    private String readStringTillDelimiter(String str, char delimiter) {
         StringBuffer sb = new StringBuffer();
         for (int i = 0; i < str.length(); i++) {
             if (str.charAt(i) == delimiter) {
